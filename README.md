@@ -25,7 +25,7 @@ This project implements a basic container runtime that provides:
 Ensure you have the following files:
 - `simple_container.c` - Main container implementation
 - `Makefile` - Build configuration
-- `copy_libs.sh` - Script to copy shared libraries
+- `mkrootfs.sh` - Script to create a simple rootfs
 
 ### 2. Compile the Container Runtime
 
@@ -51,31 +51,13 @@ Before running containers, you need a root filesystem. You can create a minimal 
 
 ```bash
 # Make the script executable
-chmod +x copy_libs.sh
+chmod +x mkrootfs.sh
 
 # Create a minimal rootfs
-make SHELL=/bin/bash create-rootfs
+./mkrootfs.sh
 ```
 
 This creates a `rootfs` directory with essential binaries and their dependencies.
-
-### Manual Creation
-
-If you prefer to create a custom rootfs:
-
-```bash
-mkdir -p my_rootfs/{bin,sbin,etc,proc,sys,tmp,usr/bin,lib,lib64}
-
-# Copy essential binaries
-cp /bin/bash my_rootfs/bin/
-cp /bin/ls my_rootfs/bin/
-cp /bin/cat my_rootfs/bin/
-
-# Copy required libraries (use ldd to find dependencies)
-# For example: ldd /bin/bash
-cp /lib/x86_64-linux-gnu/libc.so.6 my_rootfs/lib/
-# ... copy other required libraries
-```
 
 ## Usage
 
@@ -95,7 +77,7 @@ sudo ./simple_container [OPTIONS] <rootfs_path> <command> [args...]
 #### 1. Run a Shell in Container
 
 ```bash
-sudo ./simple_container ./rootfs /bin/bash
+sudo ./simple_container ./rootfs /bin/sh
 ```
 
 #### 2. Run a Command with Custom Hostname
@@ -176,7 +158,6 @@ sudo ./simple_container ./rootfs /bin/ls /
 #### "No such file or directory" when executing commands
 - Verify the binary exists in rootfs: `ls -la rootfs/bin/`
 - Check that required libraries are present: `ldd rootfs/bin/bash`
-- Use the `copy_libs.sh` script to copy dependencies
 
 #### Mount errors
 - Ensure proc, sys, tmp directories exist in rootfs
@@ -193,7 +174,7 @@ make clean
 ### Remove Test Rootfs
 
 ```bash
-make clean-rootfs
+rm -fr rootfs
 ```
 
 ### Uninstall System Binary
@@ -237,16 +218,6 @@ Add debug output by modifying the source code:
 
 ```c
 printf("Debug: About to chroot to %s\n", config->rootfs_path);
-```
-
-### Checking Dependencies
-
-```bash
-# Check what libraries a binary needs
-ldd rootfs/bin/bash
-
-# Verify libraries exist in rootfs
-ls -la rootfs/lib/
 ```
 
 ### Kernel Feature Support
